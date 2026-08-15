@@ -270,5 +270,10 @@ PK/UK/FK가 안 붙은 참조 필드(`orders.user_id`, `stocks.product_option_id
 
 ```
 .
-└── db/schema.sql        PostgreSQL DDL (스키마별)
+├── bootstrap/            실행 진입점 (Spring Boot 애플리케이션, ArchUnit 경계 테스트)
+├── common/               공유 커널 (Money 등 공통 VO)
+├── user/ catalog/ inventory/ cart/ order/ payment/   Bounded Context별 모듈
+└── db/schema.sql         PostgreSQL DDL (스키마별)
 ```
+
+의존 방향: `common ← user, catalog, inventory` / `common, catalog ← cart` / `cart, inventory, catalog, user ← order` / `order ← payment` — `bootstrap`이 전체를 모아 실행 가능한 애플리케이션으로 조립한다.

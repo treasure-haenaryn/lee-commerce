@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: lee-commerce
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
