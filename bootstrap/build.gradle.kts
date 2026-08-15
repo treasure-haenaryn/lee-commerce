@@ -9,6 +9,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     testImplementation(libs.archunit.junit5)

@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: lee_commerce
+      POSTGRES_USER: lee_commerce
+      POSTGRES_PASSWORD: lee_commerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # 공식 postgres 이미지는 데이터 디렉터리가 비어있는 최초 기동 시에만
+      # /docker-entrypoint-initdb.d/ 안의 .sql 파일을 알파벳 순으로 실행한다.
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+  redis:
+    image: redis:8
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres-data:
