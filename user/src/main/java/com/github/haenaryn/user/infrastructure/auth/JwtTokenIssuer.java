@@ -52,22 +52,23 @@ class JwtTokenIssuer implements TokenIssuer {
         secureRandom.nextBytes(randomBytes);
         String rawValue = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
 
-        return new IssuedRefreshToken(rawValue, hash(rawValue), Instant.now().plus(REFRESH_TOKEN_TTL));
-    }
-
-    private SecretKey signingKey() {
-        return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
+        return new IssuedRefreshToken(rawValue, hashRefreshToken(rawValue), Instant.now().plus(REFRESH_TOKEN_TTL));
     }
 
     // 리프레시 토큰은 이미 256비트 랜덤값이라 브루트포스 대상이 아니다 — 비밀번호처럼 느린
     // 해시(BCrypt)가 필요 없고, 조회용으로 빠른 SHA-256이면 충분하다.
-    private String hash(String value) {
+    @Override
+    public String hashRefreshToken(String rawValue) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashed = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            byte[] hashed = digest.digest(rawValue.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hashed);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256을 사용할 수 없다", e);
         }
+    }
+
+    private SecretKey signingKey() {
+        return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
     }
 }

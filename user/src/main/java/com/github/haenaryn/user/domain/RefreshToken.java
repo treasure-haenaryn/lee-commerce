@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.Instant;
 
@@ -37,6 +38,12 @@ public class RefreshToken {
     @Column(name = "replaced_by_token_id")
     private Long replacedByTokenId;
 
+    // 같은 토큰으로 동시에 재발급 요청이 들어와도 revoke()가 한쪽에서만 성공하도록 낙관적
+    // 락을 건다 — 없으면 두 요청이 동시에 미폐기 상태를 읽어 각각 새 토큰을 발급해버릴 수 있다.
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     protected RefreshToken() {
     }
 
@@ -56,7 +63,7 @@ public class RefreshToken {
     }
 
     public boolean isExpired(Instant now) {
-        return now.isAfter(expiresAt);
+        return !now.isBefore(expiresAt);
     }
 
     // 회전(rotation): 이 토큰을 폐기하면서 이걸 대체한 새 토큰의 id를 남긴다 — 재사용 탐지 등

@@ -47,6 +47,7 @@ CREATE TABLE "user".refresh_tokens (
     expires_at              timestamptz  NOT NULL,
     revoked_at              timestamptz,
     replaced_by_token_id    bigint REFERENCES "user".refresh_tokens (id),
+    version                 bigint       NOT NULL DEFAULT 0,
     CONSTRAINT uk_refresh_tokens_token_hash UNIQUE (token_hash)
 );
 
@@ -56,6 +57,9 @@ CREATE INDEX ix_refresh_tokens_expires_at ON "user".refresh_tokens (expires_at);
 COMMENT ON TABLE "user".refresh_tokens IS
     'DB는 회전(rotation) 이력의 감사 추적용이다. "현재 유효한 세션"의 실시간 조회/폐기는 '
     'Redis(user_id:device_id 키)가 맡는다 — 두 저장소가 이력/현재 상태로 역할이 나뉜다.';
+COMMENT ON COLUMN "user".refresh_tokens.version IS
+    '같은 토큰으로 동시에 재발급 요청이 들어와도 하나만 성공하도록 낙관적 락으로 막는다 — '
+    '없으면 두 요청이 동시에 미폐기 상태를 읽어 각각 새 토큰을 발급해버릴 수 있다.';
 
 CREATE TABLE "user".addresses (
     id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

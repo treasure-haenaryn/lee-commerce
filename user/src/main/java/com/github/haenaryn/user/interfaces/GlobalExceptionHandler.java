@@ -3,6 +3,7 @@ package com.github.haenaryn.user.interfaces;
 import com.github.haenaryn.user.domain.exception.AuthenticationFailedException;
 import com.github.haenaryn.user.domain.exception.DuplicateEmailException;
 import com.github.haenaryn.user.domain.exception.InvalidPasswordException;
+import com.github.haenaryn.user.domain.exception.InvalidRefreshTokenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,11 @@ class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationFailedException.class)
     ResponseEntity<ApiErrorResponse> handleAuthenticationFailed(AuthenticationFailedException e) {
         return error(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_FAILED", e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    ResponseEntity<ApiErrorResponse> handleInvalidRefreshToken(InvalidRefreshTokenException e) {
+        return error(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", e.getMessage());
     }
 
     // Email VO 등 Domain VO 생성자가 형식 오류에 던지는 예외.
