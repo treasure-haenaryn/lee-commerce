@@ -3,6 +3,7 @@ package com.github.haenaryn.user.interfaces;
 import com.github.haenaryn.user.domain.exception.AuthenticationFailedException;
 import com.github.haenaryn.user.domain.exception.DuplicateEmailException;
 import com.github.haenaryn.user.domain.exception.InvalidPasswordException;
+import com.github.haenaryn.user.domain.exception.InvalidRefreshTokenException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,15 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(response.getBody().code()).isEqualTo("AUTHENTICATION_FAILED");
+    }
+
+    @Test
+    void 유효하지_않은_리프레시_토큰은_401() {
+        ResponseEntity<ApiErrorResponse> response = handler.handleInvalidRefreshToken(
+            new InvalidRefreshTokenException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody().code()).isEqualTo("INVALID_REFRESH_TOKEN");
     }
 
     @Test
