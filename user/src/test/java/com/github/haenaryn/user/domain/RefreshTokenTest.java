@@ -28,6 +28,14 @@ class RefreshTokenTest {
     }
 
     @Test
+    void 만료_시각과_정확히_같으면_만료된_것이다() {
+        Instant now = Instant.now();
+        RefreshToken token = RefreshToken.issue(1L, "hash", now.minus(14, ChronoUnit.DAYS), now);
+
+        assertThat(token.isExpired(now)).isTrue();
+    }
+
+    @Test
     void 회전하면_폐기되고_대체_토큰_id가_남는다() {
         Instant now = Instant.now();
         RefreshToken token = RefreshToken.issue(1L, "hash", now, now.plus(14, ChronoUnit.DAYS));

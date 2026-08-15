@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,6 +26,12 @@ class RedissonSessionRepository implements SessionRepository {
     @Override
     public void revoke(Long userId, String deviceId) {
         redissonClient.getBucket(key(userId, deviceId)).delete();
+    }
+
+    @Override
+    public Optional<String> findRefreshTokenHash(Long userId, String deviceId) {
+        RBucket<String> bucket = redissonClient.getBucket(key(userId, deviceId));
+        return Optional.ofNullable(bucket.get());
     }
 
     private String key(Long userId, String deviceId) {
