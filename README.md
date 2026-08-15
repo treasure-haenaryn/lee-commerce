@@ -13,7 +13,7 @@ ArchUnit으로 강제한다. 프론트엔드는 다루지 않는다(API + Swagge
 
 ## 기술 스택
 
-- Java 21 (LTS)
+- Java 25 (LTS)
 - Spring Boot 4.1
 - PostgreSQL 18 (Bounded Context별 스키마 분리)
 - Kafka 4.1 (Outbox 이벤트 발행)
