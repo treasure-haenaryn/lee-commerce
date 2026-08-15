@@ -1,5 +1,7 @@
 package com.github.haenaryn.bootstrap;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -60,9 +62,23 @@ class ArchitectureTest {
 
     @Test
     void domain_레이어는_spring_프레임워크에_의존하지_않는다() {
+        // 감사 필드(생성/수정 시각)는 @EntityListeners(AuditingEntityListener.class) +
+        // @CreatedDate/@LastModifiedDate로 처리하는데, 이 애너테이션/리스너가 Entity 자체(Domain)에
+        // 붙는다. @CreatedDate/@LastModifiedDate는 org.springframework.data.annotation,
+        // AuditingEntityListener는 org.springframework.data.jpa.domain.support — 이 둘만 예외로
+        // 허용한다. @Service/@Transactional/Spring Data Repository 같은 실제 프레임워크 결합(DI,
+        // 트랜잭션, 저장소 추상화)은 여전히 금지.
+        DescribedPredicate<JavaClass> springAuditingSupport = JavaClass.Predicates
+            .resideInAPackage("org.springframework.data.annotation..")
+            .or(JavaClass.Predicates.resideInAPackage("org.springframework.data.jpa.domain.support.."));
+
+        DescribedPredicate<JavaClass> springExceptAuditing = JavaClass.Predicates
+            .resideInAPackage("org.springframework..")
+            .and(DescribedPredicate.not(springAuditingSupport));
+
         ArchRule rule = noClasses()
             .that().resideInAPackage("..domain..")
-            .should().dependOnClassesThat().resideInAnyPackage("org.springframework..")
+            .should().dependOnClassesThat(springExceptAuditing)
             .allowEmptyShould(true);
 
         rule.check(importedClasses);
