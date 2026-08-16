@@ -112,4 +112,59 @@ class ProductDiscountTest {
 
         assertThat(discount.isEffective(Instant.now())).isFalse();
     }
+
+    @Test
+    void 기간이_겹치면_겹친다고_판단한다() {
+        Instant now = Instant.now();
+        ProductDiscount a = ProductDiscount.create(
+            1L, "PERCENTAGE", BigDecimal.TEN, now, now.plus(3, ChronoUnit.DAYS));
+        ProductDiscount b = ProductDiscount.create(
+            1L, "FIXED_AMOUNT", BigDecimal.TEN, now.plus(1, ChronoUnit.DAYS), now.plus(5, ChronoUnit.DAYS));
+
+        assertThat(a.overlapsWith(b)).isTrue();
+        assertThat(b.overlapsWith(a)).isTrue();
+    }
+
+    @Test
+    void 기간이_겹치지_않으면_겹치지_않는다고_판단한다() {
+        Instant now = Instant.now();
+        ProductDiscount a = ProductDiscount.create(
+            1L, "PERCENTAGE", BigDecimal.TEN, now, now.plus(2, ChronoUnit.DAYS));
+        ProductDiscount b = ProductDiscount.create(
+            1L, "FIXED_AMOUNT", BigDecimal.TEN, now.plus(3, ChronoUnit.DAYS), now.plus(5, ChronoUnit.DAYS));
+
+        assertThat(a.overlapsWith(b)).isFalse();
+    }
+
+    @Test
+    void 한쪽이_비활성이면_기간이_겹쳐도_겹치지_않는다고_판단한다() {
+        Instant now = Instant.now();
+        ProductDiscount a = ProductDiscount.create(
+            1L, "PERCENTAGE", BigDecimal.TEN, now, now.plus(3, ChronoUnit.DAYS));
+        ProductDiscount b = ProductDiscount.create(
+            1L, "FIXED_AMOUNT", BigDecimal.TEN, now, now.plus(3, ChronoUnit.DAYS));
+        b.deactivate();
+
+        assertThat(a.overlapsWith(b)).isFalse();
+    }
+
+    @Test
+    void 기간_제한이_없는_할인끼리는_겹친다고_판단한다() {
+        ProductDiscount a = ProductDiscount.create(1L, "PERCENTAGE", BigDecimal.TEN, null, null);
+        ProductDiscount b = ProductDiscount.create(1L, "FIXED_AMOUNT", BigDecimal.TEN, null, null);
+
+        assertThat(a.overlapsWith(b)).isTrue();
+    }
+
+    @Test
+    void 한쪽_종료_시각과_다른쪽_시작_시각이_같으면_겹친다고_판단한다() {
+        Instant now = Instant.now();
+        Instant boundary = now.plus(3, ChronoUnit.DAYS);
+        ProductDiscount a = ProductDiscount.create(1L, "PERCENTAGE", BigDecimal.TEN, now, boundary);
+        ProductDiscount b = ProductDiscount.create(1L, "FIXED_AMOUNT", BigDecimal.TEN, boundary, now.plus(5, ChronoUnit.DAYS));
+
+        assertThat(a.overlapsWith(b)).isTrue();
+        assertThat(a.isEffective(boundary)).isTrue();
+        assertThat(b.isEffective(boundary)).isTrue();
+    }
 }
