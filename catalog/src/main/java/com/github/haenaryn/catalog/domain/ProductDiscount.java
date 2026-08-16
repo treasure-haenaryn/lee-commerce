@@ -79,6 +79,23 @@ public class ProductDiscount {
         this.isActive = false;
     }
 
+    // 두 할인의 유효 기간이 겹치는지만 본다 — "동시에 유효한 할인은 1개"라는 정책을
+    // 강제하는 근거로 Application에서 기존 할인 목록과 비교할 때 쓴다. 비활성 할인은
+    // 애초에 유효할 수 없으므로 겹침 판정에서 제외한다. isEffective()가 시작/종료 시각
+    // 둘 다 경계 포함(now == startsAt 또는 now == endsAt이면 유효)으로 판단하므로,
+    // 여기서도 양 끝을 포함한 구간으로 겹침을 판정해야 한다 — 그렇지 않으면 한쪽
+    // endsAt과 다른 쪽 startsAt이 같은 시각에 두 할인이 동시에 유효해질 수 있다.
+    public boolean overlapsWith(ProductDiscount other) {
+        if (!this.isActive || !other.isActive) {
+            return false;
+        }
+        Instant thisStart = this.startsAt == null ? Instant.MIN : this.startsAt;
+        Instant thisEnd = this.endsAt == null ? Instant.MAX : this.endsAt;
+        Instant otherStart = other.startsAt == null ? Instant.MIN : other.startsAt;
+        Instant otherEnd = other.endsAt == null ? Instant.MAX : other.endsAt;
+        return !thisStart.isAfter(otherEnd) && !otherStart.isAfter(thisEnd);
+    }
+
     // starts_at/ends_at이 null이면 그 방향으로는 기간 제한이 없다는 뜻이다.
     public boolean isEffective(Instant now) {
         if (!isActive) {
