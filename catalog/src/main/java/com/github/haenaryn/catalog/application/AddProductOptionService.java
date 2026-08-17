@@ -3,6 +3,7 @@ package com.github.haenaryn.catalog.application;
 import com.github.haenaryn.catalog.domain.Product;
 import com.github.haenaryn.catalog.domain.ProductOptionSpec;
 import com.github.haenaryn.catalog.domain.ProductRepository;
+import com.github.haenaryn.catalog.domain.event.ProductChangedEvent;
 import com.github.haenaryn.catalog.domain.exception.ProductNotFoundException;
 import com.github.haenaryn.common.vo.Money;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Currency;
 public class AddProductOptionService {
 
     private final ProductRepository productRepository;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public void addOption(AddProductOptionCommand command) {
@@ -28,5 +30,6 @@ public class AddProductOptionService {
         product.addOption(new ProductOptionSpec(command.skuCode(), command.size(), command.color(), priceOverride));
 
         productRepository.save(product);
+        domainEventPublisher.publish(new ProductChangedEvent(product.getId()));
     }
 }

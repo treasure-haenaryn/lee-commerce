@@ -158,6 +158,40 @@ COMMENT ON COLUMN catalog.product_discounts.discount_type IS
     '할인 계산 전략(정률/정액 등)을 고르는 dispatch 키. 전략 패턴으로 구현해 새 방식을 '
     '추가할 때 마이그레이션이 필요 없도록 일부러 CHECK 제약을 두지 않는다.';
 
+-- aggregate_id는 이벤트를 발행하는 애그리거트(현재는 products)를 가리키는 범용 컬럼이라
+-- 특정 테이블에 대한 FK를 걸지 않는다.
+CREATE TABLE catalog.outbox_events (
+    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    aggregate_type  varchar(50) NOT NULL,
+    aggregate_id    bigint      NOT NULL,
+    event_type      varchar(100) NOT NULL,
+    payload         jsonb       NOT NULL,
+    status          varchar(20) NOT NULL,
+    retry_count     int         NOT NULL DEFAULT 0,
+    created_at      timestamptz NOT NULL DEFAULT now(),
+    published_at    timestamptz,
+    -- 폴러가 이 행을 집어간(PROCESSING으로 바꾼) 시각. 리스가 만료된 PROCESSING 행을
+    -- 재선점하는 데 쓴다 — 폴러가 죽어도 이 행이 영원히 멈춰 있지 않도록 하기 위함.
+    processing_at   timestamptz,
+    -- "user".refresh_tokens.version과 같은 목적의 낙관적 락이다 — 리스가 만료돼 다른
+    -- 폴러가 이 행을 재선점한 뒤에, 원래 작업자가 뒤늦게 처리 결과를 반영하려다 그
+    -- 재선점 작업자의 갱신을 덮어쓰는 것을 막는다.
+    version         bigint      NOT NULL DEFAULT 0,
+    CONSTRAINT ck_catalog_outbox_events_status
+        CHECK (status IN ('PENDING', 'PROCESSING', 'PUBLISHED', 'FAILED')),
+    CONSTRAINT ck_catalog_outbox_events_retry_count_nonneg CHECK (retry_count >= 0)
+);
+
+-- 폴러(@Scheduled)가 SELECT ... FOR UPDATE SKIP LOCKED로 PENDING 이벤트를 긁어가는 쿼리를 지원.
+CREATE INDEX ix_catalog_outbox_events_status_created_at ON catalog.outbox_events (status, created_at);
+CREATE INDEX ix_catalog_outbox_events_aggregate ON catalog.outbox_events (aggregate_type, aggregate_id);
+-- 같은 쿼리가 리스 만료된 PROCESSING 행을 재선점하는 부분을 지원. PROCESSING 행만
+-- 대상이라 부분 인덱스로 좁힌다.
+CREATE INDEX ix_catalog_outbox_events_processing_at ON catalog.outbox_events (processing_at)
+    WHERE status = 'PROCESSING';
+-- 보존 기간이 지난 PUBLISHED 행을 정리하는 배치 삭제 쿼리를 지원.
+CREATE INDEX ix_catalog_outbox_events_status_published_at ON catalog.outbox_events (status, published_at);
+
 -- =====================================================================
 -- 3. inventory 스키마
 -- =====================================================================

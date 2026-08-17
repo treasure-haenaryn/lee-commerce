@@ -29,11 +29,14 @@ class DeactivateProductOptionServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
+
     private DeactivateProductOptionService service;
 
     @BeforeEach
     void setUp() {
-        service = new DeactivateProductOptionService(productRepository);
+        service = new DeactivateProductOptionService(productRepository, domainEventPublisher);
     }
 
     @Test
@@ -59,5 +62,6 @@ class DeactivateProductOptionServiceTest {
             .filteredOn(option -> option.getSkuCode().equals("SKU-1"))
             .allMatch(option -> !option.isActive());
         verify(productRepository).save(product);
+        verify(domainEventPublisher).publish(any());
     }
 }
