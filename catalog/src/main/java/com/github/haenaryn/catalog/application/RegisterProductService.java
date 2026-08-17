@@ -4,6 +4,7 @@ import com.github.haenaryn.catalog.domain.Product;
 import com.github.haenaryn.catalog.domain.ProductOption;
 import com.github.haenaryn.catalog.domain.ProductOptionSpec;
 import com.github.haenaryn.catalog.domain.ProductRepository;
+import com.github.haenaryn.catalog.domain.event.ProductChangedEvent;
 import com.github.haenaryn.common.vo.Money;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.List;
 public class RegisterProductService {
 
     private final ProductRepository productRepository;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public RegisterProductResult register(RegisterProductCommand command) {
@@ -28,6 +30,7 @@ public class RegisterProductService {
         Product product = Product.register(
             command.categoryId(), command.name(), command.description(), basePrice, optionSpecs);
         Product saved = productRepository.save(product);
+        domainEventPublisher.publish(new ProductChangedEvent(saved.getId()));
 
         List<String> skuCodes = saved.getOptions().stream().map(ProductOption::getSkuCode).toList();
         return new RegisterProductResult(saved.getId(), saved.getName(), saved.getStatus().name(), skuCodes);
