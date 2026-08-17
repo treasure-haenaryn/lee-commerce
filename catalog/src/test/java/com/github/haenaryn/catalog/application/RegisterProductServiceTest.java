@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -20,11 +21,14 @@ class RegisterProductServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
+
     private RegisterProductService service;
 
     @Test
     void 등록에_성공하면_저장된_상품_정보를_반환한다() {
-        service = new RegisterProductService(productRepository);
+        service = new RegisterProductService(productRepository, domainEventPublisher);
         when(productRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         RegisterProductResult result = service.register(new RegisterProductCommand(
@@ -34,11 +38,12 @@ class RegisterProductServiceTest {
         assertThat(result.name()).isEqualTo("티셔츠");
         assertThat(result.status()).isEqualTo("ON_SALE");
         assertThat(result.skuCodes()).containsExactly("SKU-1");
+        verify(domainEventPublisher).publish(any());
     }
 
     @Test
     void 옵션별_가격_override가_있으면_반영된_상품이_저장된다() {
-        service = new RegisterProductService(productRepository);
+        service = new RegisterProductService(productRepository, domainEventPublisher);
         when(productRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         RegisterProductResult result = service.register(new RegisterProductCommand(

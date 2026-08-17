@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,11 +29,14 @@ class AddProductOptionServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
+
     private AddProductOptionService service;
 
     @BeforeEach
     void setUp() {
-        service = new AddProductOptionService(productRepository);
+        service = new AddProductOptionService(productRepository, domainEventPublisher);
     }
 
     @Test
@@ -43,7 +47,7 @@ class AddProductOptionServiceTest {
             new AddProductOptionCommand(1L, "SKU-2", null, null, null, null)))
             .isInstanceOf(ProductNotFoundException.class);
 
-        verify(productRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(productRepository, never()).save(any());
     }
 
     @Test
@@ -57,5 +61,6 @@ class AddProductOptionServiceTest {
 
         assertThat(product.getOptions()).hasSize(2);
         verify(productRepository).save(product);
+        verify(domainEventPublisher).publish(any());
     }
 }

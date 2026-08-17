@@ -30,11 +30,14 @@ class ChangeProductStatusServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
+
     private ChangeProductStatusService service;
 
     @BeforeEach
     void setUp() {
-        service = new ChangeProductStatusService(productRepository);
+        service = new ChangeProductStatusService(productRepository, domainEventPublisher);
     }
 
     @Test
@@ -58,5 +61,6 @@ class ChangeProductStatusServiceTest {
 
         assertThat(product.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
         verify(productRepository).save(product);
+        verify(domainEventPublisher).publish(any());
     }
 }
