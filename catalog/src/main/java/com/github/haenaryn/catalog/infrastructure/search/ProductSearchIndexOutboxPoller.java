@@ -74,6 +74,7 @@ class ProductSearchIndexOutboxPoller {
     private ProductSearchDocument toDocument(Product product) {
         return new ProductSearchDocument(
             String.valueOf(product.getId()),
+            product.getId(),
             product.getName(),
             product.getCategoryId(),
             product.getBasePrice().amount(),
