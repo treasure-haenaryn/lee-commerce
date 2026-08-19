@@ -15,6 +15,11 @@ class ProductSearchDocument {
     @Id
     private String id;
 
+    // @Id 필드(문자열 id)는 ES의 _id 메타 필드로 매핑돼 일반 필드로 정렬/조회할 수 없다
+    // — 정렬용으로 별도의 숫자 필드를 둔다.
+    @Field(type = FieldType.Long, name = "product_id")
+    private Long productId;
+
     @Field(type = FieldType.Text)
     private String name;
 
@@ -36,9 +41,10 @@ class ProductSearchDocument {
     }
 
     ProductSearchDocument(
-            String id, String name, Long categoryId, BigDecimal basePriceAmount,
+            String id, Long productId, String name, Long categoryId, BigDecimal basePriceAmount,
             String basePriceCurrency, String status) {
         this.id = id;
+        this.productId = productId;
         this.name = name;
         this.categoryId = categoryId;
         this.basePriceAmount = basePriceAmount;
@@ -48,6 +54,10 @@ class ProductSearchDocument {
 
     String getId() {
         return id;
+    }
+
+    Long getProductId() {
+        return productId;
     }
 
     String getName() {
