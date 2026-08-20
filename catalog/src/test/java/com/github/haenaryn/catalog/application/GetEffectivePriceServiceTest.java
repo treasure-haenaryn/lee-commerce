@@ -5,6 +5,7 @@ import com.github.haenaryn.catalog.domain.ProductDiscount;
 import com.github.haenaryn.catalog.domain.ProductDiscountRepository;
 import com.github.haenaryn.catalog.domain.ProductOptionSpec;
 import com.github.haenaryn.catalog.domain.ProductRepository;
+import com.github.haenaryn.catalog.domain.ProductStatus;
 import com.github.haenaryn.catalog.domain.exception.ProductNotFoundException;
 import com.github.haenaryn.common.vo.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +56,28 @@ class GetEffectivePriceServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
         assertThatThrownBy(() -> service.getEffectivePrice(new GetEffectivePriceQuery(1L, "NOT-EXIST")))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void 판매중이_아닌_상품이면_예외() {
+        Product product = Product.register(1L, "티셔츠", null, BASE_PRICE,
+            List.of(new ProductOptionSpec("SKU-1", null, null, null)));
+        product.changeStatus(ProductStatus.HIDDEN);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> service.getEffectivePrice(new GetEffectivePriceQuery(1L, "SKU-1")))
+            .isInstanceOf(ProductNotFoundException.class);
+    }
+
+    @Test
+    void 비활성화된_옵션이면_예외() {
+        Product product = Product.register(1L, "티셔츠", null, BASE_PRICE,
+            List.of(new ProductOptionSpec("SKU-1", null, null, null), new ProductOptionSpec("SKU-2", null, null, null)));
+        product.deactivateOption("SKU-1");
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> service.getEffectivePrice(new GetEffectivePriceQuery(1L, "SKU-1")))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
