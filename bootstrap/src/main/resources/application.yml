@@ -23,6 +23,11 @@ jwt:
   # 저장소에 공개돼 있어서 누구나 같은 키로 유효한 토큰을 위조할 수 있게 된다.
   secret: ${JWT_SECRET}
 
+catalog:
+  api-key:
+    # jwt.secret과 같은 이유로 기본값을 두지 않는다.
+    value: ${CATALOG_API_KEY}
+
 server:
   port: 8080
 
