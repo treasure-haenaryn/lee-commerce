@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -91,5 +92,18 @@ class ReserveStockServiceTest {
         assertThat(result.status()).isEqualTo(StockReservationStatus.RESERVED);
         verify(stockRepository).save(stock);
         verify(stockReservationRepository).save(any(StockReservation.class));
+    }
+
+    @Test
+    void 동일_주문의_동시_재시도로_유일성_제약을_위반하면_예외를_그대로_전파한다() {
+        Stock stock = Stock.register(1L, 10);
+        ReflectionTestUtils.setField(stock, "id", 10L);
+        when(stockRepository.findByProductOptionId(1L)).thenReturn(Optional.of(stock));
+        when(stockReservationRepository.findByOrderIdAndStockId(100L, stock.getId())).thenReturn(Optional.empty());
+        when(stockReservationRepository.save(any(StockReservation.class)))
+            .thenThrow(new DataIntegrityViolationException("uk_stock_reservations_order_stock"));
+
+        assertThatThrownBy(() -> service.reserve(new ReserveStockCommand(1L, 100L, 3)))
+            .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
