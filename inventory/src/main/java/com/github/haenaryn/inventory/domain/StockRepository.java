@@ -9,4 +9,6 @@ public interface StockRepository {
     Optional<Stock> findById(Long id);
 
     Optional<Stock> findByProductOptionId(Long productOptionId);
+
+    Optional<Stock> findByProductOptionIdForUpdate(Long productOptionId);
 }

@@ -27,4 +27,9 @@ class StockRepositoryImpl implements StockRepository {
     public Optional<Stock> findByProductOptionId(Long productOptionId) {
         return jpaRepository.findByProductOptionId(productOptionId);
     }
+
+    @Override
+    public Optional<Stock> findByProductOptionIdForUpdate(Long productOptionId) {
+        return jpaRepository.findByProductOptionIdForUpdate(productOptionId);
+    }
 }
